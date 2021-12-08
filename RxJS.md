@@ -139,6 +139,121 @@ multicasted.connect();
 multicast返回的是一个ConnectableObservable，它只是有着connect()方法的一个observable。<br/>
 connect()方法对于确定何时共享observable执行开始非常重要。因为connect()在后台执行`source.subscribe(subject)`，所以connect()返回一个Subscription，可以从中取消订阅以取消共享的observable执行。
 
+* **BehaviorSubject**存储发送给消费者的最新值，并且每当新的Observer subscribe时，它将立即从BehaviorSubject接收当前值
+```
+import { BehaviorSubject } from 'rxjs';
+const subject = new BehaviorSubject(0); // 0 is the initial value
+ 
+subject.subscribe({
+  next: (v) => console.log(`observerA: ${v}`)
+});
+ 
+subject.next(1);
+subject.next(2);
+ 
+subject.subscribe({
+  next: (v) => console.log(`observerB: ${v}`)
+});
+ 
+subject.next(3);
+ 
+// Logs
+// observerA: 0
+// observerA: 1
+// observerA: 2
+// observerB: 2
+// observerA: 3
+// observerB: 3
+```
+* **ReplaySubject**记录observable执行的多个值(可配置)，并将它们重放到新subscribers中
+```
+import { ReplaySubject } from 'rxjs';
+const subject = new ReplaySubject(3); // buffer 3 values for new subscribers
+ 
+subject.subscribe({
+  next: (v) => console.log(`observerA: ${v}`)
+});
+ 
+subject.next(1);
+subject.next(2);
+subject.next(3);
+subject.next(4);
+ 
+subject.subscribe({
+  next: (v) => console.log(`observerB: ${v}`)
+});
+ 
+subject.next(5);
+ 
+// Logs:
+// observerA: 1
+// observerA: 2
+// observerA: 3
+// observerA: 4
+// observerB: 2
+// observerB: 3
+// observerB: 4
+// observerA: 5
+// observerB: 5
+```
+除了缓冲区大小之外，还可以指定以毫秒为单位的窗口时间，以确定记录的值的时间长度。在下面的示例中，使用了100的缓冲区大小，窗口时间参数为500毫秒：
+```
+import { ReplaySubject } from 'rxjs';
+const subject = new ReplaySubject(100, 500 /* windowTime */);
+ 
+subject.subscribe({
+  next: (v) => console.log(`observerA: ${v}`)
+});
+ 
+let i = 1;
+setInterval(() => subject.next(i++), 200);
+ 
+setTimeout(() => {
+  subject.subscribe({
+    next: (v) => console.log(`observerB: ${v}`)
+  });
+}, 1000);
+ 
+// Logs
+// observerA: 1
+// observerA: 2
+// observerA: 3
+// observerA: 4
+// observerA: 5
+// observerB: 3
+// observerB: 4
+// observerB: 5
+// observerA: 6
+// observerB: 6
+// ...
+```
+* **AsyncSubject** 在执行完成时,只会有observable执行的最后一个值被发送给其observer。类似于last()operator。
+```
+import { AsyncSubject } from 'rxjs';
+const subject = new AsyncSubject();
+ 
+subject.subscribe({
+  next: (v) => console.log(`observerA: ${v}`)
+});
+ 
+subject.next(1);
+subject.next(2);
+subject.next(3);
+subject.next(4);
+ 
+subject.subscribe({
+  next: (v) => console.log(`observerB: ${v}`)
+});
+ 
+subject.next(5);
+subject.complete();
+ 
+// Logs:
+// observerA: 5
+// observerB: 5
+```
+* **Void subject**
+
 
 #### Schedulers (调度器)
 用来控制并发并且是中央集权的调度员，允许我们在发生计算时进行协调，例如 setTimeout 或 requestAnimationFrame 或其他
