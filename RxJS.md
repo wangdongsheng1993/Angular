@@ -21,9 +21,9 @@ Push  Push是由生产者决定何时发送数据
 Promise和RxJS引入的Observable都是JavaScript的Push系统
 Observable (可观察对象)
 - Observables是多个值的延迟推送集合
-      SINGLE	  MULTIPLE
+      SINGLE	MULTIPLE
 Pull	Function	Iterator
-Push	Promise	  Observable
+Push	Promise	Observable
     
 Observer (观察者)
 - Observer是Observable传递给消费者的值
