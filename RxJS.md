@@ -57,8 +57,7 @@ Observables一般情况是一些常见类型的值，但也有可能是Observabl
 
 #### Subscription (订阅)
 Subscription是一个表示一次性的Observable的执行，主要用于取消Observable的执行。<br/>
-Subscription本质上只有一个unsubscribe()函数来释放资源或取消Observable的执行。<br/>
-`subscription.unsubscribe();`
+Subscription本质上只有一个unsubscribe()函数来释放资源或取消Observable的执行。`subscription.unsubscribe();`<br/>
 Subscription也可以放在一起，可以通过将一个Subscription添加到另一个Subscription中来实现`subscription.add(childSubscription);`，因此对一个Subscription的unsubscribe()的调用可以取消多个订阅。<br/>
 Subscription还有一个`subscription.remove(childSubscription);`方法，用于撤消子订阅的添加。
 
@@ -116,6 +115,29 @@ observable.subscribe(subject); // You can subscribe providing a Subject
 // observerB: 3
 ```
 Subject是使任何observable的执行共享给多个observer的唯一方法。<br/>
+
+**Multicasted Observables** 使用Subject能够使多个observer看到相同的observable执行。observer订阅底层Subject，Subject订阅源observable。
+```
+import { from, Subject } from 'rxjs';
+import { multicast } from 'rxjs/operators';
+ 
+const source = from([1, 2, 3]);
+const subject = new Subject();
+const multicasted = source.pipe(multicast(subject));
+ 
+// These are, under the hood, `subject.subscribe({...})`:
+multicasted.subscribe({
+  next: (v) => console.log(`observerA: ${v}`)
+});
+multicasted.subscribe({
+  next: (v) => console.log(`observerB: ${v}`)
+});
+ 
+// This is, under the hood, `source.subscribe(subject)`:
+multicasted.connect();
+```
+multicast返回的是一个ConnectableObservable，它只是有着connect()方法的一个observable。<br/>
+connect()方法对于确定何时共享observable执行开始非常重要。因为connect()在后台执行`source.subscribe(subject)`，所以connect()返回一个Subscription，可以从中取消订阅以取消共享的observable执行。
 
 
 #### Schedulers (调度器)
